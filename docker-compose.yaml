@@ -3,9 +3,49 @@ version: '3'
 services:
   app:
     build: .
+    command: npm run start:dev
     entrypoint: ./.docker/entrypoint.sh
     ports: 
       - 3000:3000
+      - 9229:9229
     container_name: nest-api
     volumes:
     - .:/home/node/app
+    networks:
+      - server-network
+    restart: unless-stopped
+    depends_on:
+      - mongodb
+  mongodb:
+    image: mongo:3
+    container_name: server-mongodb
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+      - MONGO_INITDB_DATABASE=nest
+    networks:
+      - server-network
+    ports:
+      - 27017:27017
+    build: ./.docker/mongo
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongo admin:password@mongodb:27017/test --quiet
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+  mongo-express:
+    image: mongo-express
+    environment:
+        - ME_CONFIG_MONGODB_SERVER=mongodb
+        - ME_CONFIG_MONGODB_PORT=27017
+        - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
+        - ME_CONFIG_MONGODB_ADMINPASSWORD=password
+    depends_on:
+        - mongodb
+    ports:
+      - 8080:8081
+    links: 
+      - mongodb:mongodb
+networks:
+  server-network:
