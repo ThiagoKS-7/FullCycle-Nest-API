@@ -6,5 +6,6 @@ services:
     entrypoint: ./.docker/entrypoint.sh
     ports: 
       - 3000:3000
+    container_name: nest-api
     volumes:
     - .:/home/node/app
